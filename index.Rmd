@@ -13,6 +13,9 @@ The data at hand is a deep dive into the realm of incarceration numbers. With th
 
 summary_info <- list()
 
+data_filtered <- data %>%
+  filter(!is.na(black_pop_15to64))
+
 summary_info$total_black_pop_15to64 <- sum(data$black_pop_15to64, na.rm = TRUE)
 
 state_counts <- data %>%
