@@ -1,71 +1,173 @@
 ---
-title: "A3: Incarceration"
+title: "A5: Incarceration"
 output: html_document
 ---
 
 ### Introduction
 
-An introduction of the problem domain and a description of the variable(s) you are choosing to analyze (and why!)
+The data at hand is a deep dive into the realm of incarceration numbers. With the data addressing this data in a number of states, this analysis aims to demonstrate the trends that are occurring in jails around the United States. It ultimately aims to be broad scale enough to where the data can be valuable to large influence individuals, such as politicians. The variables that are being analysed are black_pop_15to64, state, and county_name. The black_pop_15to64 variable demonstrates the number of individuals that are in the age range of 15 to 64 that are incarcerated while the state variable allows for the connection to be made between the state in which the black_pop_15to64 variable is applicable. This further applies to the county_name variable, as this variable allows for it to be know which county in which the given black_pop_15to64 value is. 
 
 ### Summary Information
 
-Write a summary paragraph of findings that includes the 5 values calculated from your summary information R script
+```{r}
 
-These will likely be calculated using your DPLYR skills, answering questions such as: 
+summary_info <- list()
 
-- What is the average value of my variable across all the counties (in the current year)?
-- Where is my variable the highest / lowest?
-- How much has my variable change over the last N years?
+summary_info$total_black_pop_15to64 <- sum(data$black_pop_15to64, na.rm = TRUE)
 
-Feel free to calculate and report values that you find relevant. Again, remember that the purpose is to think about how these measure of incarceration vary by race.
+state_counts <- data %>%
+    group_by(state) %>%
+    summarise(total_black_population__per_state = sum(black_pop_15to64, na.rm = TRUE))
+
+print(state_counts)
+
+pop_mean <- data %>%
+  group_by(state) %>%
+  summarise(mean_black_population_per_state = mean(black_pop_15to64, na.rm = TRUE))
+
+print(pop_mean)
+
+# Finds the county with the lowest black_pop_15to64
+min_black_pop_county <- data_filtered %>%
+  filter(black_pop_15to64 == min(black_pop_15to64, na.rm = TRUE)) %>%
+  slice(1)
+
+summary_info$county_with_lowest_black_pop_15to64 <- min_black_pop_county %>%
+  summarise(
+    state = state,
+    county_name = county_name,
+    total_black_pop_15to64 = black_pop_15to64)
+
+# Finds the county with the highest black_pop_15to64
+max_black_pop_county <- data %>%
+  filter(black_pop_15to64 == max(black_pop_15to64, na.rm = TRUE)) %>%
+  slice(1)
+
+summary_info$county_with_highest_black_pop_15to64 <- max_black_pop_county %>%
+  summarise(
+    state = state,
+    county_name = county_name,
+    total_black_pop_15to64 = black_pop_15to64)
+
+print(summary_info)
+
+
+```
+
+With the values that have been calculated from the summary above, it can be seen that for starting to establish the numbers in which are seen through out the whole of the United States in terms of Black incarceration numbers, there is an a total of 705732403 people that have been incarcerated. From this point, the summary dives into the range of numbers that is seen in regards to different states and their subsequent counties. The range of numbers that we see from calculating the total number of Black incarcerations in regards to the individual states further cements what was show in the charts and map above in how California shows a number of 45411490 total incarcerated Black people in the age range of 15 to 64, while Arkansas has a number of 513941. Furthermore, among the counties, it is seen that California has a mean of 26999, while Arkansas has a mean of 591. Deeper evaluation shows that the county with the lowest number of incarcerated Black people is Bristol Bay Borough in Arkansas, with a total of zero Black incarcerated people and New York's New York County has the highest number at 1367586.
 
 ### The Dataset
 
 Who collected the data?  
-How was the data collected or generated?  
-Why was the data collected?  
-How many observations (rows) are in your data?  
-How many features (columns) are in the data?  
-What, if any, ethical questions or questions of power do you need to consider when working with this data?  
-What are possible limitations or problems with this data?   (at least 200 words)
+The data was collected by the U.S. Department of Justice Bureau of Justice Statistics (BJS): Census of Jails, the Deaths in Custody Reporting Program (DCRP), and the Annual Survey of Jails.
 
+How was the data collected or generated?  
+The data was collected by the means of facility level admissions and discharge, census completion, and by survey completion.   
+
+Why was the data collected?  
+The data was collected so that it can support research on incarceration. Vera aimed to use this data to do more than just have impact to individual counties, but rather for it to have a larger scale impact to where it could be valuable to politicians. 
+
+How many observations (rows) are in your data?
+In the incarceration_trends data, there are 95 observations.
+
+How many features (columns) are in the data?  
+There are features 153811 in the data.
+
+What, if any, ethical questions or questions of power do you need to consider when working with this data?  
+Some ethical questions to consider are in regards to if the review is conducted ethically, if there is transparency in the representation of the data and in its collection, and if those that collect the data all are subjected to the same training to thus ensure that bias isn't present in the data.
+
+What are possible limitations or problems with this data?   (at least 200 words)
+Possible limitations with this data can come in the form of incomplete or missing data. With such a data set, one of the largest possible issues can be that of missing data points. Such an issue can lead to a bias in the data or it can result in an analysis of the data that isn't an accurate representation of the true data had it all been present. Another issue can come in the form of inaccuracy in the data and a lack of reliability. This can come from different states or jurisdictions having different methods that could then impact the data that is gathered. Privacy concerns can also be a limitation that presents itself in the obtaining of such data. Given that the information that is being gathered is inherently sensitive in nature, with part of the data at hand collecting demographic details and incarceration rates, ensuring that there are methods set in place that allow for anonymity and safe storage of the data presents as being crucial. Should practices like this not be set in place, the data could become volatile due to those being included in the data voicing concerns. Another limit that could present itself from this data is the challenges that can come about from trying to integrate this data with other data sets. The ways in which data in gathered regarding the topic at hand might differ just enough to were integrating similar data sets together presents a challenge.  
 
 ### Trends Over Time Chart
 
-Include a chart. Make sure to describe why you included the chart, and what patterns emerged
+```{r}
 
-The first chart that you will create and include will show the trend over time of your variable/topic. Think carefully about what you want to communicate to your user (you may have to find relevant trends in the dataset first!). Here are some requirements to help guide your design:
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(viridis)
 
-- Show more than one, but fewer than ~10 trends
-  - This may mean showing the same measure for different locations or different racial groups. Think carefully about a meaningful comparison of locations (e.g., the top 10 counties in a state, top 10 states, etc.)
-- You must have clear x and y axis labels
-- The chart needs a clear title 
-- You need a legend for your different line colors and a clear legend title
+data <- read.csv("incarceration_trends.csv")
 
-When we say "clear" or "human readable" titles and labels, that means that you should not just display the variable name.
+time_trend_chart <- ggplot(data %>% filter(year >= 1990) %>% group_by(year, state) %>%
+         summarize(total_jail_pop = sum(black_pop_15to64, na.rm = TRUE)),
+       aes(x = year, y = total_jail_pop, color = state)) +
+  geom_line() +
+  labs(title = "Black Incarceration Numbers Over Time By State", x = "Year", y = "Black Incarceration Numbers", color = "State") +
+  theme_minimal()
+print(time_trend_chart)
 
-Here's an example of how to run an R script inside an RMarkdown file:
-
-``````{r, echo = FALSE, code = readLines("chart1_example.R")}
 ```
+
+Trends Over Time Chart Summary:
+The chart is designed the way that it is in order to demonstrate the correlation between time, Black incarceration rates in the age range of 15 to 64, and the different states. The code allows for the grouping of the data in terms of year and state, and the data is summarized in reference to the Black incarceration rates in the age range of 15 to 64. What becomes of this is a chart that demonstrates the range on Black incarcerations that take place starting from the year of 1990 in all of the states in the USA. The chart shows that there are a number of states that demonstrate a linear increase in the number of Black incarcerations over the years, while some demonstrate a relationship that still demonstrates a growth trend without there being linearity. 
+
 
 ### Variable Comparison Chart
 
-Include a chart. Make sure to describe why you included the chart, and what patterns emerged
+```{r}
 
-The second chart that you will create and include will show how two different (continuous) variables are related to one another. Again, think carefully about what such a comparison means and what you want to communicate to your user (you may have to find relevant trends in the dataset first!). Here are some requirements to help guide your design:
+wa_data <- data %>% filter(state == "WA", year >= 1990)
 
-- You must have clear x and y axis labels
-- The chart needs a clear title 
-- If you choose to add a color encoding (not required), you need a legend for your different color and a clear legend title
+wa_data <- wa_data %>% select(year, county_name, black_pop_15to64)
+
+highest_pop_county <- wa_data %>%
+  group_by(county_name) %>%
+  summarise(total_black_jail_pop = sum(black_pop_15to64, na.rm = TRUE)) %>%
+  top_n(5, total_black_jail_pop) %>%
+  pull(county_name)
+
+wa_top_counties <- wa_data %>%
+  filter(county_name %in% highest_pop_county)
+
+time_trend_chart <- ggplot(wa_top_counties, aes(x = year, y = black_pop_15to64, color = county_name)) +
+  geom_line(linewidth = 1) +
+  labs(title = "Trends of Black Incarceration Over Time in Top 5 Counties of Washington",
+       x = "Year",
+       y = "Number of Black Incarcerations",
+       color = "County") +
+  theme_minimal() +
+  theme(legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        plot.title = element_text(size = 14, face = "bold"))
+
+print(time_trend_chart)
+
+```
+
+Variable Comparison Chart:
+The chart is designed the way that it is because such a construction of the chart allows for the demonstration of the top five counties in Washington in terms of the highest number of Black incarcerations in the age range of 15 to 64. The comparison that takes place between the "county_name" variable in reference to Washington State and the variable "black_pop_15to64" allows for a correlation to be made between the top 5 counties in Washington State and the numbers that are seen in these counties in terms of Black incarcerations in the age range of 15 to 64. The code functions in a way that it allows for the summarizing of the Black incarceration numbers and the subsequent references to the top 5 counties in Washington. The pattern that emerges from the chart is that there is the greatest number of Black incarcerations in King county and the fewest out of the top five counties in Kitsap county. 
+
 
 ### Map
 
-Include a chart. Make sure to describe why you included the chart, and what patterns emerged
+```{r}
 
-The last chart that you will create and include will show how a variable is distributed geographically. Again, think carefully about what such a comparison means and what you want to communicate to your user (you may have to find relevant trends in the dataset first!). Here are some requirements to help guide your design:
+state_data <- data %>%
+  group_by(state) %>%
+  summarize(black_pop_15to64 = sum(black_pop_15to64, na.rm = TRUE))
 
-- Your map needs a title
-- Your color scale needs a legend with a clear label
-- Use a map based coordinate system to set the aspect ratio of your map
+us_map <- map_data("state")
 
+state_data <- state_data %>%
+  mutate(region = tolower(state.name[match(state, state.abb)]))
+
+map_data <- left_join(us_map, state_data, by = "region")
+
+usa_map <- ggplot(map_data, aes(x = long, y = lat, group = group, fill = black_pop_15to64)) +
+  geom_polygon(color = "black") +
+  coord_fixed(1.3) +
+  scale_fill_viridis_c(option = "C") +
+  labs(title = "Black Population Incarcerated (Aged 15 to 64) by State",
+       fill = "Population Incarcerated") +
+  theme_minimal()
+
+print(usa_map)
+
+```
+
+Map Summary: 
+The map is designed the way that it is because the aim of the map was to visualize which state in the USA has the greatest number of Black incarcerations in the age range of 15 to 64. The code for the map allows for ggplot2 to be utilized given its built in set of maps, which provides a map of the USA that was then merged with the incarceration data set to allow for it to be mapped on top of the map from ggplot2. The pattern that emerges from the map is that there is a higher number of Black incarcerations in the age range of 15 to 64 in the states of Texas, Florida, California, New York, and Georgia, with New York having the highest number of incarcerations, and the states of Idaho, Montana, and New Mexico, among others, have the lowest number of incarcerations. The map shows that there ultimately are lower rates of Black incarcerations on the west coast than the east coast. 
